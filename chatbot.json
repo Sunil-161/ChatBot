@@ -1,0 +1,375 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {
+          "allowedOrigins": "*",
+          "responseMode": "responseNode"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        100
+      ],
+      "id": "94a4fbd4-120f-4ee3-8b3b-461b57f51550",
+      "name": "When chat message received",
+      "webhookId": "8451e0b3-a715-423d-97a4-1370f381ab00"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ecd8a69d-6974-4eac-9bc8-3277063756ed",
+              "name": "text",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "id": "432b03db-29b7-46ac-8849-8d745a63b0d4",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant with memory and knowledge capabilities.\n\nContext Awareness — The date and time is: {{ $now }}\n\nProduct Information (Google Sheets)\nYou have access to the Google Sheets tool \"Product Info\", which allows you to read any content from the sheet.\nYour job is to access it to get the information you need. Always check the Google Sheet Column \"Product Description\" if the user mentiones any questions about any product or a related topic. \n\nNever tell the user that you used Google Sheets to retrieve the data.\n\nThe Google Sheet \"Product Info\" contains all the product links.\n\n\nIf a user asks for a product link, you must always look into the Google Sheet and retrieve the correct link.\nExamples of requests:\n\"Send me the link to buy the product.\"\n\"Where can I buy the product?\"\n📌 Rule: After every user message, always check the Google Sheet \"Product Info\" to ensure you have the latest product details and links.\n\nMemory Handling (Supabase - \"Store_Memory\")\nYou have access to Supabase tools for memory storage and retrieval.\n\nCall the \"Get_Memory\" tool to retrieve past interactions before responding.\n\nEvery response must use previous memory to guide the user towards a decision.\n\n#Rule: You must ALWAYS Call the \"Store_Memory\" tool to save any customer insight.\n\nWhat to store in memory?\n\nWhat the user is looking for.\nTheir problems, objections, and challenges.\nWhat products they are interested in.\nKey insights about their needs.\n\n📌 Rule: Before generating any response, always retrieve relevant memories from Supabase (\"Get_Memory\") and update them when new information is learned.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        812,
+        0
+      ],
+      "id": "ad91365b-e5a1-4181-94db-7d65d48c0e7d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        660,
+        220
+      ],
+      "id": "25be04f9-afdf-4fdc-a46c-0ea249655c0f",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Qw9v6N9BhPQhL2W1",
+          "name": "Ollama account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        220
+      ],
+      "id": "523ddee3-c40c-47c7-ab28-1f4b78ac0a9f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1K0R5GA9mMtkT66W_PpiaU42TexgFWcNop7NojINAK3Q",
+          "mode": "list",
+          "cachedResultName": "Products_N8N",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K0R5GA9mMtkT66W_PpiaU42TexgFWcNop7NojINAK3Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K0R5GA9mMtkT66W_PpiaU42TexgFWcNop7NojINAK3Q/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        900,
+        220
+      ],
+      "id": "fdec4b81-d72d-41b2-82b1-179e2a69be74",
+      "name": "Product Info",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wFwS3IdR43GjWudN",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "n8n AI agent webchat",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "memory",
+              "fieldValue": "={{ $fromAI(\"memory\",\"store new memory based on the user's input and be as specific as you can\") }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $fromAI(\"customer_email\",\"if the user responds with an email address you can save it here\") }}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $fromAI(\"customer_name\",\"if the user responds with a name you can save it here\") }}"
+            },
+            {
+              "fieldId": "sessionID",
+              "fieldValue": "={{ $('When chat message received').item.json.sessionId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        220
+      ],
+      "id": "22c20932-69c0-412c-bd02-e2a4ba00e58b",
+      "name": "Store_Memory",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oms4AxuFIJ0i8ila",
+          "name": "website ai Agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "n8n AI agent webchat",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        220
+      ],
+      "id": "675beefb-10b7-4ae0-b08a-8802a942af9a",
+      "name": "Get_Memory",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oms4AxuFIJ0i8ila",
+          "name": "website ai Agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        1340,
+        0
+      ],
+      "id": "1cac065e-4343-4c12-a547-c6a5f57f5a55",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1d2d58a6-f8fe-4970-8eff-3cc8384e5c73",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        100
+      ],
+      "id": "504b4ea4-fffa-45cd-9d76-59f4239d489b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"output\": \"Please type your name and email address first, to start the chat.\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        440,
+        200
+      ],
+      "id": "62f1cca1-d1fd-4ebc-97a8-db51d5c64e83",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Info": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9354bc0b-a488-4932-97cf-18ecc6653d3b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a0ed49fa5807292853221d2a37328d08efa46db0a678c4c2bdbf249c8fa0e763"
+  },
+  "id": "WR7zsrSbWDKwnPxH",
+  "tags": []
+}
