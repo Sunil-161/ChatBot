@@ -26,7 +26,4 @@ This is a smart, retrieval-based chatbot built with **N8N** and **locally hosted
 | Product DB    | Google Sheets (as database)  |
 | Containerization | Docker                    |
 
----
-
-## 📂 Project Structure
 
