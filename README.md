@@ -28,3 +28,5 @@ This is a smart, retrieval-based chatbot built with **N8N** and **locally hosted
 
 
 ![Final Workflow Images](Working_Images/Final_Workflow.png)
+
+![ChatBot Image](Working_Images/chat_Images1.png)
