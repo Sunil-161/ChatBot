@@ -27,3 +27,4 @@ This is a smart, retrieval-based chatbot built with **N8N** and **locally hosted
 | Containerization | Docker                    |
 
 
+![Final Workflow Images](Working_Images/Final_Workflow.png)
